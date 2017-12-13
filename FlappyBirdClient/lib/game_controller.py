@@ -134,6 +134,13 @@ def singleGameReady():
             # remove startLayer
             gameScene.remove(readyLayer)
 
+            # 开始计时
+            global start_time
+            start_time = time.time();
+            # 暂停按钮
+            pause_Button = PauseMenu()
+            gameLayer.add(pause_Button, z=50, name="pause_button")
+
     readyLayer = ReadyTouchHandler()
     readyLayer.add(ready)
     readyLayer.add(tutorial)
@@ -144,6 +151,9 @@ def backToMainMenu():
     re = True
     restartButton = RestartMenu()
     gameLayer.add(restartButton, z=50, name="restart_button")
+
+    # 记录运行时间
+    recordTime()
 
 
 def showContent(content):
@@ -319,6 +329,38 @@ def check_log_in(name,pwd):
         print('log in fail')
         return False  
 
+def recordTime():
+    # 记录运行时间
+    global end_time
+    end_time = time.time()
+    survive_time = end_time - start_time
+    print("Total time: %f" % (survive_time))
+
+    # 记录该用户的存活时间
+    global name
+    exist = False
+    pos = 0
+    data = xlrd.open_workbook(r'record_table.xls')
+    table = data.sheets()[0]
+    wb=copy(data)
+    sheet=wb.get_sheet(0)
+    nrows=table.nrows
+    ncols=table.ncols
+    sheet.write(nrows,0,name)
+    sheet.write(nrows,1,survive_time)
+    wb.save(r'record_table.xls')
+    print("record time succeed!")
+    #for i in range(nrows):
+    #    if name == table.cell(i,0).value:
+    #        exist = True
+    #        pos = i
+    #        pass
+    #    if exist == True:
+    #       record_time = table.cell(pos,1).value
+    #       if survive_time > record_time:
+    #           pass
+    #      pass
+
 
 class DifficultyMenu(Menu):
     def __init__(self):  
@@ -419,3 +461,14 @@ class SingleGameStartMenu(Menu):
         re = False
         gameLayer.remove("start_button")
         singleGameReady() 
+
+class PauseMenu(Menu):
+    def __init__(self):  
+        super(PauseMenu, self).__init__()
+        self.menu_valign = TOP
+        self.menu_halign = RIGHT
+        items = [
+                (ImageMenuItem(common.load_image("button_pause.png"), log_in)),
+                ]  
+        self.create_menu(items,selected_effect=zoom_in(),unselected_effect=zoom_out())
+    #未添加回调函数
