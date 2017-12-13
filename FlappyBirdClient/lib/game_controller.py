@@ -14,7 +14,13 @@ from pipe import *
 from collision import *
 from network import *
 import common
-
+##
+import time
+import xlwt
+import xlrd
+import sys
+from xlrd import open_workbook
+from xlutils.copy import copy
 
 
 gameLayer = None
@@ -35,6 +41,9 @@ isGamseStart = False
 ##
 difficulty = 0
 re = False
+name = None
+pwd = None
+sign = None
 
 def get_difficulty():
     return difficulty
@@ -61,8 +70,10 @@ def game_start(_gameScene):
     # 给gameScene赋值
     gameScene = _gameScene
     initGameLayer()
-    start_botton = SingleGameStartMenu()
-    gameLayer.add(start_botton, z=20, name="start_button")
+    log_botton = LogOrSignMenu()
+    gameLayer.add(log_botton, z=20, name='log_button')
+    # start_botton = SingleGameStartMenu()
+    # gameLayer.add(start_botton, z=20, name="start_button")
     connect(gameScene)
 
 def createLabel(value, x, y):
@@ -147,13 +158,11 @@ def removeContent():
         pass
 
 
-def chooseLevel_1():
-    gameLayer.remove("start_button")
-    difficulty_botton = DifficultyMenu()
-    gameLayer.add(difficulty_botton, z=20, name="difficulty_button")
-
-def chooseLevel_2():
-    gameLayer.remove("restart_button")
+def chooseLevel():
+    if re:
+        gameLayer.remove("restart_button")
+    else:
+        gameLayer.remove("start_button")
     difficulty_botton = DifficultyMenu()
     gameLayer.add(difficulty_botton, z=20, name="difficulty_button")
 
@@ -167,6 +176,148 @@ def showNotice():
     else:
         request_notice() # request_notice is from network.py
 
+
+
+def log_out():
+    global name, pwd
+    (name, pwd) = (None, None)
+    if re:
+        gameLayer.remove("restart_button")
+    else:
+        gameLayer.remove("start_button")
+    log_botton = LogOrSignMenu()
+    gameLayer.add(log_botton, z=20, name='log_button')
+
+
+
+def log_in():
+    global sign
+    sign = False
+    gameLayer.remove("log_button")
+    inputBotton = InputMenu()
+    gameLayer.add(inputBotton, z=50, name="input_button")
+    # if re:
+    #     restartBotton = RestartMenu()
+    #     gameLayer.add(restartBotton, z=50, name="restart_button")
+    # else:
+    #     start_botton = SingleGameStartMenu()
+    #     gameLayer.add(start_botton, z=20, name="start_button")
+
+def sign_up():
+    global sign
+    sign = True
+    gameLayer.remove("log_button")
+    inputBotton = InputMenu()
+    gameLayer.add(inputBotton, z=50, name="input_button")
+
+def process_name(value):
+    global name
+    if value == '':
+        print "no character"
+        pass
+    else:
+        name = value
+
+def process_pwd(value):
+    global pwd
+    if value == '':
+        print "no character"
+        pass
+    else:       
+        pwd = value
+
+def process_input():
+    global name, pwd
+    if sign:
+        result = check_sign_up(name, pwd)
+    else:
+        result = check_log_in(name, pwd)
+
+    gameLayer.remove("input_button")
+    if result and sign:
+        content = "Sign up successfully."
+        showContent(content)
+    elif result and not sign:
+        content = "Log in successfully."
+        showContent(content)
+    elif not result and sign:
+        content = "Sign up failed."
+        showContent(content)
+    elif not result and not sign:
+        content = "Log in failed."
+        showContent(content)
+    time.sleep(1)
+    if result:
+        if re:
+            restartBotton = RestartMenu()
+            gameLayer.add(restartBotton, z=50, name="restart_button")
+        else:
+            start_botton = SingleGameStartMenu()
+            gameLayer.add(start_botton, z=20, name="start_button")
+    else:
+        log_botton = LogOrSignMenu()
+        gameLayer.add(log_botton, z=20, name='log_button')
+
+
+
+
+def check_sign_up(name,pwd):
+    if name == "" or pwd == "": return False
+    sign_up_able=True
+    book = xlrd.open_workbook(r'register_table.xls',formatting_info=True)
+    b=book.sheets()[0]
+    wb=copy(book)
+    sheet=wb.get_sheet(0)
+    nrows=b.nrows
+    ncols=b.ncols
+    count=nrows
+    for i in range(nrows):
+        cty=b.cell(i,0).ctype
+        n=b.cell(i,0).value
+        if cty==2:
+            n=str(int(n))
+        if name == n :
+            sign_up_able=False
+    
+    if sign_up_able==True:
+        sheet.write(count,0,name)
+        sheet.write(count,1,pwd)
+        count=count+1
+        print('sign up success')
+        wb.save(r'register_table.xls')
+        return True
+    else:
+        print('sign up fail')
+        return False
+  
+
+def check_log_in(name,pwd):
+    if name == "" or pwd == "": return False
+    book = xlrd.open_workbook(r'register_table.xls')
+    table=book.sheets()[0]
+    nrows=table.nrows
+    ncols=table.ncols
+    log_in_able=False
+    for i in range(nrows):
+        ctype_1 = table.cell(i,0).ctype
+        no_1 = table.cell(i,0).value
+        if ctype_1 ==2:       
+            no_1 = str(int(no_1))
+        if name == no_1:
+            log_in_able=True
+            ctype = table.cell(i,1).ctype
+            no = table.cell(i,1).value
+            if ctype==2:
+                no = str(int(no))
+            if no==pwd:
+                print('log in success') 
+                return True
+            else:
+                print('log in fail')
+                return False
+    if log_in_able==False:
+        print('log in fail')
+        return False  
 
 
 class DifficultyMenu(Menu):
@@ -212,7 +363,8 @@ class RestartMenu(Menu):
         items = [
                 (ImageMenuItem(common.load_image("button_restart.png"), self.initMainMenu)),
                 (ImageMenuItem(common.load_image("button_notice.png"), showNotice)),
-                (ImageMenuItem(common.load_image("button_difficulty.png"), chooseLevel_2)),
+                (ImageMenuItem(common.load_image("button_difficulty.png"), chooseLevel)),
+                (ImageMenuItem(common.load_image("button_logout.png"), log_out)),
                 ]  
         self.create_menu(items,selected_effect=zoom_in(),unselected_effect=zoom_out())
 
@@ -222,6 +374,33 @@ class RestartMenu(Menu):
         isGamseStart = False
         singleGameReady()
 
+class LogOrSignMenu(Menu):
+    def __init__(self):  
+        super(LogOrSignMenu, self).__init__()
+        self.menu_valign = CENTER
+        self.menu_halign = CENTER
+        items = [
+                (ImageMenuItem(common.load_image("button_login.png"), log_in)),
+                (ImageMenuItem(common.load_image("button_signup.png"), sign_up)),
+                ]  
+        self.create_menu(items,selected_effect=zoom_in(),unselected_effect=zoom_out())
+
+class InputMenu(Menu):
+    def __init__(self):  
+        super(InputMenu, self).__init__()
+        global name, pwd
+        (name, pwd) = (None, None)
+        self.menu_valign = CENTER
+        self.menu_halign = LEFT
+        items = [
+                (EntryMenuItem('id:', process_name, '', 10)),
+                (EntryMenuItem('pwd:', process_pwd, '', 10)),
+                (ImageMenuItem(common.load_image("button_ok.png"), process_input)),
+                ]  
+        self.create_menu(items,selected_effect=shake(),unselected_effect=shake_back())
+
+
+
 class SingleGameStartMenu(Menu):
     def __init__(self):  
         super(SingleGameStartMenu, self).__init__()
@@ -230,10 +409,13 @@ class SingleGameStartMenu(Menu):
         items = [
                 (ImageMenuItem(common.load_image("button_start.png"), self.gameStart)),
                 (ImageMenuItem(common.load_image("button_notice.png"), showNotice)),
-                (ImageMenuItem(common.load_image("button_difficulty.png"), chooseLevel_1)),
+                (ImageMenuItem(common.load_image("button_difficulty.png"), chooseLevel)),
+                (ImageMenuItem(common.load_image("button_logout.png"), log_out)),
                 ]  
         self.create_menu(items,selected_effect=zoom_in(),unselected_effect=zoom_out())
 
     def gameStart(self):
+        global re
+        re = False
         gameLayer.remove("start_button")
         singleGameReady() 
