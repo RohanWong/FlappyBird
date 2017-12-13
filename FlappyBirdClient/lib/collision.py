@@ -83,5 +83,7 @@ def gameOver(gameScene, land_1, land_2, spriteBird, upPipeCollided):
         spriteBird.stop()
         import game_controller
         game_controller.backToMainMenu()
+        import score
+        score.showFinalScores()
 
     
