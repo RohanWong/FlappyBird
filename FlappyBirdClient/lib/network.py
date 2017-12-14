@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import socket, netstream
+import socket, netstream, os, sys,game_controller,collision
 connected = False
 sock = None
 
@@ -52,3 +52,18 @@ def request_notice():
     send_data = get_send_data()
     send_data['notice'] = 'request notice'
     netstream.send(sock, send_data)
+
+#向server发送战绩
+def send_data(finalscore):
+    print"Send finalscore to server"
+    dataScore="999Score|"+str(finalscore)
+    sock.send(dataScore)
+
+def send_data2(name,time):
+    print"Send time and name to server"
+    dataNT="999Name|"+str(name)+" "+str(time)
+    sock.send(dataNT)
+
+def send_data3(thisScore):
+    dataTS="888"+str(thisScore)
+    sock.send(dataTS)
