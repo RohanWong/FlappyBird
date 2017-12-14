@@ -1,12 +1,16 @@
 #!/usr/local/bin/python
 # -*- coding: utf-8 -*-
 import socket, json, base64
+import xlrd
+from xlrd import open_workbook
+from xlutils.copy import copy
+
 
 # constants
 TIMEOUT = -1
 CLOSED = -2
 EMPTY = -3    #means read empty data
-
+ACCEPTED = -4
 # param: sock, dict
 # return: 1-success TIMEOUT-timeout CLOSED-closed EMPTY-empty
 def send(sock, dic):  # take dict as argument!!
@@ -24,6 +28,7 @@ def send(sock, dic):  # take dict as argument!!
 def read(sock):
     #读取三位的长度信息
     sock.setblocking(0)
+    msg=0
     try:
         length = sock.recv(3)
     except socket.error as (err_code, err_message):
@@ -60,9 +65,42 @@ def read(sock):
     #读取到''说明socket另一头被关闭
     if data == '':
         return CLOSED
-    
+    else:
+        if length==888:
+            msg=1
+            print("Scores: %d" % float(data))
+        if length==999:
+            msg=1
+            action,dt = data.split('|')
+            if action=='Name':
+                na,ti=dt.split()
+                ti=float(ti)
+                data = xlrd.open_workbook(r'record_table.xls')
+                table = data.sheets()[0]
+                wb=copy(data)
+                sheet=wb.get_sheet(0)
+                nrows=table.nrows
+                ncols=table.ncols
+                sheet.write(nrows,0,na)
+                sheet.write(nrows,1,ti)
+                wb.save(r'record_table.xls')
+                print("record time succeed!")
+            elif action=='Score':
+                dt=float(dt)
+                data = xlrd.open_workbook(r'record_table.xls')
+                table = data.sheets()[0]
+                wb=copy(data)
+                sheet=wb.get_sheet(0)
+                nrows=table.nrows
+                ncols=table.ncols
+                sheet.write(nrows-1,2,dt)
+                wb.save(r'record_table.xls')
+                print("record scores succeed!")
     #解析数据
-    return unpack(data)
+    if msg==0:
+        return unpack(data)
+    else:
+        return ACCEPTED
 
 # 功能：对输入的dict使用json转换 使用base64加密 加上长度信息
 # 输入：dict

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import socket, select, netstream, random, pickle, os, traceback
+import socket, select, netstream, random, pickle, os, traceback, string
 
 HOST = "127.0.0.1"
 disconnected_list = []#断开连接的客户端列表
@@ -40,12 +40,15 @@ while inputs:
 				onlineUser[sid] = cInfo
 				print(str(onlineUser))
 				sid += 1
+
 			else:
 				# receive data
 				recvData = netstream.read(r)
 				# print 'Read data from ' + str(r.getpeername()) + '\tdata is: ' + str(recvData)
+				if recvData == netstream.ACCEPTED:
+					pass
 				# socket关闭
-				if recvData == netstream.CLOSED or recvData == netstream.TIMEOUT:
+				elif recvData == netstream.CLOSED or recvData == netstream.TIMEOUT:
 					if r.getpeername() not in disconnected_list:
 						print str(r.getpeername()) + 'disconnected'
 						disconnected_list.append(r.getpeername())

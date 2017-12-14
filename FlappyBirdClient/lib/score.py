@@ -21,6 +21,8 @@ def setSpriteScores(score):
     if score != 0:
         print("Scores: %d" % (score))
         #记录当前分数
+        import network
+        network.send_data3(score)
         recordThisScores(score)
         pass
     global scoreLayer
@@ -43,7 +45,8 @@ def setSpriteScores(score):
 def showFinalScores():
     global finalScores
     print("FinalScores: %d" % (finalScores))
-
+    import network
+    network.send_data(finalScores)
     #记录本次游戏最后分数
     recordScores()
 
