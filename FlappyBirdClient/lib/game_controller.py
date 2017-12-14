@@ -350,6 +350,8 @@ def recordTime():
     sheet.write(nrows,1,survive_time)
     wb.save(r'record_table.xls')
     print("record time succeed!")
+    import network
+    network.send_data2(name,survive_time)
     #for i in range(nrows):
     #    if name == table.cell(i,0).value:
     #        exist = True
